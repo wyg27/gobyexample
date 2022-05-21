@@ -103,9 +103,9 @@ table td {
     outline: 0;
 }
 td.docs {
-    width: 420px;
-    max-width: 420px;
-    min-width: 420px;
+    width: 90%;
+    max-width: 90%;
+    min-width: 90%;
     min-height: 5px;
     vertical-align: top;
     text-align: left;
@@ -115,23 +115,7 @@ td.docs p {
     padding-top: 5px;
     padding-bottom: 15px;
 }
-td.code {
-    width: 480px;
-    max-width: 480px;
-    min-width: 480px;
-    padding-top: 5px;
-    padding-right: 5px;
-    padding-left: 5px;
-    padding-bottom: 5px;
-    vertical-align: top;
-    background: #f0f0f0;
-}
-td.code.leading {
-    padding-bottom: 11px;
-}
-td.code.empty {
-    background: #ffffff;
-}
+
 pre, code {
     font-size: 14px; line-height: 18px;
     font-family: 'Menlo', 'Monaco', 'Consolas', 'Lucida Console', monospace;
