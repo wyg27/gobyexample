@@ -72,13 +72,19 @@ func whichLexer(path string) string {
 
 func debug(msg string) {
 	if os.Getenv("DEBUG") == "1" {
-		fmt.Fprintln(os.Stderr, msg)
+		_, err := fmt.Fprintln(os.Stderr, msg)
+		if err != nil {
+			// 向 Stderr 写入内容基本不可能失败，这里只是为了抑制 IDE 的提示。
+			return
+		}
 	}
 }
 
 // 代码注释符 —— "//"或"#"
-var docsPat = regexp.MustCompile("^\\s*(\\/\\/|#)\\s")
-var dashPat = regexp.MustCompile("\\-+")
+var docsPat = regexp.MustCompile(`^\s*(//|#)\s`)
+
+// 短破折号 —— "-"
+var dashPat = regexp.MustCompile(`-+`)
 
 // Seg is a segment of an example
 type Seg struct {
@@ -158,8 +164,8 @@ func parseSegs(sourcePath string) ([]*Seg, string) {
 func parseAndRenderSegs(sourcePath string) ([]*Seg, string) {
 	segs, fileContent := parseSegs(sourcePath)
 
-	// 根据文件名的后缀决定使用什么语法分析器：go 或 shell script
-	// TODO 校验文件是否为"md"后缀
+	// 根据文件名的后缀决定使用什么语法分析器：go 或 shell script；
+	// 但是目前仅能作为检查文件的后缀名了
 	whichLexer(sourcePath)
 
 	for _, seg := range segs {
@@ -242,7 +248,8 @@ func renderExamples(examples []*Example) {
 	for _, example := range examples {
 		exampleF, err := os.Create(siteDir + "/" + example.ID)
 		check(err)
-		exampleTmpl.Execute(exampleF, example)
+		err = exampleTmpl.Execute(exampleF, example)
+		check(err)
 	}
 }
 
