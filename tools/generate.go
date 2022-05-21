@@ -101,6 +101,7 @@ func parseSegs(sourcePath string) ([]*Seg, string) {
 	var (
 		lines  []string
 		source []string
+		segs   []*Seg
 	)
 	// 将 tab 转换为4个空格以统一风格
 	for _, line := range readLines(sourcePath) {
@@ -109,7 +110,7 @@ func parseSegs(sourcePath string) ([]*Seg, string) {
 	}
 	// 重新将"行"组合为"全文"。读取"行"的目的主要在于格式化。
 	filecontent := strings.Join(source, "\n")
-	segs := []*Seg{}
+
 	lastSeen := "" // 上一个处理的"行"是什么：空行、注释还是代码
 	for _, line := range lines {
 		if line == "" {
@@ -262,38 +263,3 @@ func main() {
 	renderIndex(examples)
 	renderExamples(examples)
 }
-
-var SimpleShellOutputLexer = chroma.MustNewLexer(
-	&chroma.Config{
-		Name:      "Shell Output",
-		Aliases:   []string{"console"},
-		Filenames: []string{"*.sh"},
-		MimeTypes: []string{},
-	},
-	chroma.Rules{
-		"root": {
-			// $ or > triggers the start of prompt formatting
-			{`^\$`, chroma.GenericPrompt, chroma.Push("prompt")},
-			{`^>`, chroma.GenericPrompt, chroma.Push("prompt")},
-
-			// empty lines are just text
-			{`^$\n`, chroma.Text, nil},
-
-			// otherwise its all output
-			{`[^\n]+$\n?`, chroma.GenericOutput, nil},
-		},
-		"prompt": {
-			// when we find newline, do output formatting rules
-			{`\n`, chroma.Text, chroma.Push("output")},
-			// otherwise its all text
-			{`[^\n]+$`, chroma.Text, nil},
-		},
-		"output": {
-			// sometimes there isn't output so we go right back to prompt
-			{`^\$`, chroma.GenericPrompt, chroma.Pop(1)},
-			{`^>`, chroma.GenericPrompt, chroma.Pop(1)},
-			// otherwise its all output
-			{`[^\n]+$\n?`, chroma.GenericOutput, nil},
-		},
-	},
-)
