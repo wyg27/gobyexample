@@ -1,23 +1,14 @@
 package main
 
 import (
-	"bytes"
-	"crypto/sha1"
 	"fmt"
-	"io"
-	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"text/template"
 
 	"github.com/alecthomas/chroma"
-	"github.com/alecthomas/chroma/formatters/html"
-	"github.com/alecthomas/chroma/lexers"
-	"github.com/alecthomas/chroma/styles"
-
 	"github.com/russross/blackfriday/v2"
 )
 
@@ -46,32 +37,6 @@ func copyFile(src, dst string) {
 	check(err)
 	err = os.WriteFile(dst, dat, 0644)
 	check(err)
-}
-
-func pipe(bin string, arg []string, src string) []byte {
-	cmd := exec.Command(bin, arg...)
-	in, err := cmd.StdinPipe()
-	check(err)
-	out, err := cmd.StdoutPipe()
-	check(err)
-	err = cmd.Start()
-	check(err)
-	_, err = in.Write([]byte(src))
-	check(err)
-	err = in.Close()
-	check(err)
-	bytes, err := io.ReadAll(out)
-	check(err)
-	err = cmd.Wait()
-	check(err)
-	return bytes
-}
-
-func sha1Sum(s string) string {
-	h := sha1.New()
-	h.Write([]byte(s))
-	b := h.Sum(nil)
-	return fmt.Sprintf("%x", b)
 }
 
 func mustReadFile(path string) string {
@@ -132,27 +97,6 @@ type Example struct {
 	NextExample                 *Example
 }
 
-func parseHashFile(sourcePath string) (string, string) {
-	lines := readLines(sourcePath)
-	return lines[0], lines[1]
-}
-
-func resetURLHashFile(codehash, code, sourcePath string) string {
-	if verbose() {
-		fmt.Println("  Sending request to play.golang.org")
-	}
-	payload := strings.NewReader(code)
-	resp, err := http.Post("https://play.golang.org/share", "text/plain", payload)
-	check(err)
-	defer resp.Body.Close()
-	body, err := io.ReadAll(resp.Body)
-	check(err)
-	urlkey := string(body)
-	data := fmt.Sprintf("%s\n%s\n", codehash, urlkey)
-	os.WriteFile(sourcePath, []byte(data), 0644)
-	return urlkey
-}
-
 func parseSegs(sourcePath string) ([]*Seg, string) {
 	var (
 		lines  []string
@@ -209,32 +153,6 @@ func parseSegs(sourcePath string) ([]*Seg, string) {
 		seg.CodeRun = strings.Contains(seg.Code, "package main")
 	}
 	return segs, filecontent
-}
-
-func chromaFormat(code, filePath string) string {
-
-	lexer := lexers.Get(filePath)
-	if lexer == nil {
-		lexer = lexers.Fallback
-	}
-
-	if strings.HasSuffix(filePath, ".sh") {
-		lexer = SimpleShellOutputLexer
-	}
-
-	lexer = chroma.Coalesce(lexer)
-
-	style := styles.Get("swapoff")
-	if style == nil {
-		style = styles.Fallback
-	}
-	formatter := html.New(html.WithClasses(true))
-	iterator, err := lexer.Tokenise(nil, string(code))
-	check(err)
-	buf := new(bytes.Buffer)
-	err = formatter.Format(buf, style, iterator)
-	check(err)
-	return buf.String()
 }
 
 func parseAndRenderSegs(sourcePath string) ([]*Seg, string) {
