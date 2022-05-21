@@ -9,12 +9,12 @@
       onkeydown = (e) => {
           {{if .PrevExample}}
           if (e.key == "ArrowLeft") {
-              window.location.href = '{{.PrevExample.ID}}';
+              window.location.href = '{{.PrevExample.ID}}.html';
           }
           {{end}}
           {{if .NextExample}}
           if (e.key == "ArrowRight") {
-              window.location.href = '{{.NextExample.ID}}';
+              window.location.href = '{{.NextExample.ID}}.html';
           }
           {{end}}
       }
@@ -36,16 +36,18 @@
 
       {{if .PrevExample}}
             <p class="prev">
-              Prev example: <a href="{{.PrevExample.ID}}">{{.PrevExample.Name}}</a>.
+              Prev example: <a href="{{.PrevExample.ID}}.html">{{.PrevExample.Name}}</a>.
             </p>
       {{end}}
 
       {{if .NextExample}}
       <p class="next">
-        Next example: <a href="{{.NextExample.ID}}">{{.NextExample.Name}}</a>.
+        Next example: <a href="{{.NextExample.ID}}.html">{{.NextExample.Name}}</a>.
       </p>
       {{end}}
-{{ template "footer" }}
+
+      {{ template "footer" }}
+
     </div>
     <script>
       var codeLines = [];
