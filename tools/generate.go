@@ -100,6 +100,8 @@ func whichLexer(path string) string {
 		return "go"
 	} else if strings.HasSuffix(path, ".sh") {
 		return "console"
+	} else {
+		return "hash"
 	}
 	panic("No lexer for " + path)
 }
@@ -155,20 +157,24 @@ func parseSegs(sourcePath string) ([]*Seg, string) {
 		lines  []string
 		source []string
 	)
-	// Convert tabs to spaces for uniform rendering.
+	// 将 tab 转换为4个空格以统一风格
 	for _, line := range readLines(sourcePath) {
 		lines = append(lines, strings.Replace(line, "\t", "    ", -1))
 		source = append(source, line)
 	}
+	// 重新将"行"组合为"全文"。读取"行"的目的主要在于格式化。
 	filecontent := strings.Join(source, "\n")
 	segs := []*Seg{}
-	lastSeen := ""
+	lastSeen := "" // 上一个处理的"行"是什么：空行、注释还是代码
 	for _, line := range lines {
 		if line == "" {
+			// 如果是"空行"就跳过
 			lastSeen = ""
 			continue
 		}
+		// docsPat 是一个正则匹配规则，用于匹配以"//"开头的 Go 注释
 		matchDocs := docsPat.MatchString(line)
+		// 如果匹配到了"Go 注释"，那就说明不是"Go 代码"；所以这里对 matchDocs 取反
 		matchCode := !matchDocs
 		newDocs := (lastSeen == "") || ((lastSeen != "docs") && (segs[len(segs)-1].Docs != ""))
 		newCode := (lastSeen == "") || ((lastSeen != "code") && (segs[len(segs)-1].Code != ""))
@@ -176,7 +182,7 @@ func parseSegs(sourcePath string) ([]*Seg, string) {
 			debug("NEWSEG")
 		}
 		if matchDocs {
-			trimmed := docsPat.ReplaceAllString(line, "")
+			trimmed := docsPat.ReplaceAllString(line, "") // 将匹配到的注释清空
 			if newDocs {
 				newSeg := Seg{Docs: trimmed, Code: ""}
 				segs = append(segs, &newSeg)
@@ -232,24 +238,17 @@ func chromaFormat(code, filePath string) string {
 
 func parseAndRenderSegs(sourcePath string) ([]*Seg, string) {
 	segs, filecontent := parseSegs(sourcePath)
-	lexer := whichLexer(sourcePath)
+
+	// 根据文件名的后缀决定使用什么语法分析器：go 或 shell script
+	// TODO 校验文件是否为"md"后缀
+	whichLexer(sourcePath)
+
 	for _, seg := range segs {
 		if seg.Docs != "" {
 			seg.DocsRendered = markdown(seg.Docs)
 		}
-		if seg.Code != "" {
-			seg.CodeRendered = chromaFormat(seg.Code, sourcePath)
+	}
 
-			// adding the content to the js code for copying to the clipboard
-			if strings.HasSuffix(sourcePath, ".go") {
-				seg.CodeForJs = strings.Trim(seg.Code, "\n") + "\n"
-			}
-		}
-	}
-	// we are only interested in the 'go' code to pass to play.golang.org
-	if lexer != "go" {
-		filecontent = ""
-	}
 	return segs, filecontent
 }
 
@@ -275,22 +274,17 @@ func parseExamples() []*Example {
 		example.Segs = make([][]*Seg, 0)
 		sourcePaths := mustGlob("examples/" + exampleID + "/*")
 		for _, sourcePath := range sourcePaths {
-			if strings.HasSuffix(sourcePath, ".hash") {
-				example.GoCodeHash, example.URLHash = parseHashFile(sourcePath)
-			} else {
-				sourceSegs, filecontents := parseAndRenderSegs(sourcePath)
-				if filecontents != "" {
-					example.GoCode = filecontents
-				}
-				example.Segs = append(example.Segs, sourceSegs)
+			sourceSegs, filecontents := parseAndRenderSegs(sourcePath)
+			if filecontents != "" {
+				example.GoCode = filecontents
 			}
+			example.Segs = append(example.Segs, sourceSegs)
 		}
-		newCodeHash := sha1Sum(example.GoCode)
-		if example.GoCodeHash != newCodeHash {
-			example.URLHash = resetURLHashFile(newCodeHash, example.GoCode, "examples/"+example.ID+"/"+example.ID+".hash")
-		}
+
 		examples = append(examples, &example)
 	}
+
+	// 生成前后链接
 	for i, example := range examples {
 		if i > 0 {
 			example.PrevExample = examples[i-1]
