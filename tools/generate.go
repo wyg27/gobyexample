@@ -112,6 +112,7 @@ func debug(msg string) {
 	}
 }
 
+// 代码注释符 —— "//"或"#"
 var docsPat = regexp.MustCompile("^\\s*(\\/\\/|#)\\s")
 var dashPat = regexp.MustCompile("\\-+")
 
@@ -173,7 +174,7 @@ func parseSegs(sourcePath string) ([]*Seg, string) {
 			continue
 		}
 		// docsPat 是一个正则匹配规则，用于匹配以"//"开头的 Go 注释
-		matchDocs := docsPat.MatchString(line)
+		matchDocs := true
 		// 如果匹配到了"Go 注释"，那就说明不是"Go 代码"；所以这里对 matchDocs 取反
 		matchCode := !matchDocs
 		newDocs := (lastSeen == "") || ((lastSeen != "docs") && (segs[len(segs)-1].Docs != ""))
@@ -182,7 +183,7 @@ func parseSegs(sourcePath string) ([]*Seg, string) {
 			debug("NEWSEG")
 		}
 		if matchDocs {
-			trimmed := docsPat.ReplaceAllString(line, "") // 将匹配到的注释清空
+			trimmed := docsPat.ReplaceAllString(line, "") // 清空注释符号"//"
 			if newDocs {
 				newSeg := Seg{Docs: trimmed, Code: ""}
 				segs = append(segs, &newSeg)
