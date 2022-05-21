@@ -21,7 +21,7 @@
   </script>
   <body>
     <div class="example" id="{{.ID}}">
-      <h2><a href="./">Go by Example</a>: {{.Name}}</h2>
+      <nav><a href="./">Go by Example</a></nav>
       {{range .Segs}}
       <table>
         {{range .}}
@@ -38,11 +38,7 @@
             <p class="prev">
               Prev example: <a href="{{.PrevExample.ID}}">{{.PrevExample.Name}}</a>.
             </p>
-            {{end}}
-
-      <p class="homepage">
-        <a href="index.html">Homepage</a>
-      </p>
+      {{end}}
 
       {{if .NextExample}}
       <p class="next">
