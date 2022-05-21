@@ -9,11 +9,11 @@ verbose() {
 verbose && echo "Running tests..."
 tools/test
 
-verbose && echo "Formatting code..."
-tools/format
+# verbose && echo "Formatting code..."
+# tools/format
 
-verbose && echo "Measuring line lengths..."
-tools/measure
+# verbose && echo "Measuring line lengths..."
+# tools/measure
 
 # SITE_DIR is the final location where we want generated content to be
 SITE_DIR="public"
