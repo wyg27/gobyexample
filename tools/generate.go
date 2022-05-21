@@ -93,6 +93,7 @@ type Seg struct {
 // Example is info extracted from an example file
 type Example struct {
 	ID, Name                    string
+	RealName                    string // 渲染首页列表时需要的"中文"名称
 	GoCode, GoCodeHash, URLHash string
 	Segs                        [][]*Seg
 	PrevExample                 *Example
@@ -160,20 +161,37 @@ func parseAndRenderSegs(sourcePath string) ([]*Seg, string) {
 	return segs, fileContent
 }
 
+// splitExampleName 文件 examples.txt 中的每一行都是以"英文文件名｜中文"的格式保存，这是为了在渲染首页时能灵活显示标题。
+// 本函数就是将这种格式的名字分割为 list 以便获取"中文"部分。
+func splitExampleName(name string) []string {
+	splitNames := strings.Split(name, "|")
+	if len(splitNames) == 1 {
+		splitNames = append(splitNames, splitNames[0])
+	}
+
+	return splitNames
+}
+
 func parseExamples() []*Example {
 	var exampleNames []string
+
 	for _, line := range readLines("examples.txt") {
 		if line != "" && !strings.HasPrefix(line, "#") {
 			exampleNames = append(exampleNames, line)
 		}
 	}
+
 	examples := make([]*Example, 0)
 	for i, exampleName := range exampleNames {
 		if verbose() {
 			fmt.Printf("Processing %s [%d/%d]\n", exampleName, i+1, len(exampleNames))
 		}
-		example := Example{Name: exampleName}
-		exampleID := strings.ToLower(exampleName)
+		splitNames := splitExampleName(exampleName)
+		example := Example{
+			Name:     splitNames[0],
+			RealName: splitNames[1],
+		}
+		exampleID := strings.ToLower(splitNames[0])
 		exampleID = strings.Replace(exampleID, " ", "-", -1)
 		exampleID = strings.Replace(exampleID, "/", "-", -1)
 		exampleID = strings.Replace(exampleID, "'", "", -1)
