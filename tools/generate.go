@@ -80,9 +80,6 @@ func debug(msg string) {
 	}
 }
 
-// 代码注释符 —— "//"或"#"
-var docsPat = regexp.MustCompile(`^\s*(//|#)\s`)
-
 // 短破折号 —— "-"
 var dashPat = regexp.MustCompile(`-+`)
 
@@ -123,40 +120,26 @@ func parseSegs(sourcePath string) ([]*Seg, string) {
 			lastSeen = ""
 			continue
 		}
-		// docsPat 是一个正则匹配规则，用于匹配以"//"开头的 Go 注释
-		matchDocs := true
 		// 如果匹配到了"Go 注释"，那就说明不是"Go 代码"；所以这里对 matchDocs 取反
-		matchCode := !matchDocs
 		newDocs := (lastSeen == "") || ((lastSeen != "docs") && (segs[len(segs)-1].Docs != ""))
-		newCode := (lastSeen == "") || ((lastSeen != "code") && (segs[len(segs)-1].Code != ""))
-		if newDocs || newCode {
+		if newDocs {
 			debug("NEWSEG")
 		}
-		if matchDocs {
-			trimmed := docsPat.ReplaceAllString(line, "") // 清空注释符号"//"
-			if newDocs {
-				newSeg := Seg{Docs: trimmed, Code: ""}
-				segs = append(segs, &newSeg)
-			} else {
-				segs[len(segs)-1].Docs = segs[len(segs)-1].Docs + "\n" + trimmed
-			}
-			debug("DOCS: " + line)
-			lastSeen = "docs"
-		} else if matchCode {
-			if newCode {
-				newSeg := Seg{Docs: "", Code: line}
-				segs = append(segs, &newSeg)
-			} else {
-				segs[len(segs)-1].Code = segs[len(segs)-1].Code + "\n" + line
-			}
-			debug("CODE: " + line)
-			lastSeen = "code"
+
+		if newDocs {
+			newSeg := Seg{Docs: line, Code: ""}
+			segs = append(segs, &newSeg)
+		} else {
+			segs[len(segs)-1].Docs = segs[len(segs)-1].Docs + "\n" + line
 		}
+
+		debug("DOCS: " + line)
+		lastSeen = "docs"
 	}
-	for i, seg := range segs {
-		seg.CodeEmpty = seg.Code == ""
-		seg.CodeLeading = i < (len(segs) - 1)
-		seg.CodeRun = strings.Contains(seg.Code, "package main")
+	for _, seg := range segs {
+		seg.CodeEmpty = true
+		seg.CodeLeading = false
+		seg.CodeRun = false
 	}
 	return segs, fileContent
 }
