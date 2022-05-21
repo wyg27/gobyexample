@@ -8,7 +8,6 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/alecthomas/chroma"
 	"github.com/russross/blackfriday/v2"
 )
 
@@ -68,7 +67,7 @@ func whichLexer(path string) string {
 	} else {
 		return "hash"
 	}
-	panic("No lexer for " + path)
+	//panic("No lexer for " + path)
 }
 
 func debug(msg string) {
@@ -109,7 +108,7 @@ func parseSegs(sourcePath string) ([]*Seg, string) {
 		source = append(source, line)
 	}
 	// 重新将"行"组合为"全文"。读取"行"的目的主要在于格式化。
-	filecontent := strings.Join(source, "\n")
+	fileContent := strings.Join(source, "\n")
 
 	lastSeen := "" // 上一个处理的"行"是什么：空行、注释还是代码
 	for _, line := range lines {
@@ -149,15 +148,15 @@ func parseSegs(sourcePath string) ([]*Seg, string) {
 		}
 	}
 	for i, seg := range segs {
-		seg.CodeEmpty = (seg.Code == "")
-		seg.CodeLeading = (i < (len(segs) - 1))
+		seg.CodeEmpty = seg.Code == ""
+		seg.CodeLeading = i < (len(segs) - 1)
 		seg.CodeRun = strings.Contains(seg.Code, "package main")
 	}
-	return segs, filecontent
+	return segs, fileContent
 }
 
 func parseAndRenderSegs(sourcePath string) ([]*Seg, string) {
-	segs, filecontent := parseSegs(sourcePath)
+	segs, fileContent := parseSegs(sourcePath)
 
 	// 根据文件名的后缀决定使用什么语法分析器：go 或 shell script
 	// TODO 校验文件是否为"md"后缀
@@ -169,7 +168,7 @@ func parseAndRenderSegs(sourcePath string) ([]*Seg, string) {
 		}
 	}
 
-	return segs, filecontent
+	return segs, fileContent
 }
 
 func parseExamples() []*Example {
@@ -194,9 +193,9 @@ func parseExamples() []*Example {
 		example.Segs = make([][]*Seg, 0)
 		sourcePaths := mustGlob("examples/" + exampleID + "/*")
 		for _, sourcePath := range sourcePaths {
-			sourceSegs, filecontents := parseAndRenderSegs(sourcePath)
-			if filecontents != "" {
-				example.GoCode = filecontents
+			sourceSegs, fileContents := parseAndRenderSegs(sourcePath)
+			if fileContents != "" {
+				example.GoCode = fileContents
 			}
 			example.Segs = append(example.Segs, sourceSegs)
 		}
