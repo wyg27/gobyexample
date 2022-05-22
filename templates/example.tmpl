@@ -22,17 +22,15 @@
   <body>
     <div class="example" id="{{.ID}}">
       <nav><a href="./">Go by Example</a></nav>
-      {{range .Segs}}
+
       <table>
-        {{range .}}
         <tr>
           <td class="docs">
-            {{.DocsRendered}}
+            {{.Html}}
           </td>
         </tr>
-        {{end}}
       </table>
-      {{end}}
+
 
       {{if .PrevExample}}
             <p class="prev">

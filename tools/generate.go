@@ -92,12 +92,15 @@ type Seg struct {
 
 // Example is info extracted from an example file
 type Example struct {
-	ID, Name                    string
-	RealName                    string // 渲染首页列表时需要的"中文"名称
-	GoCode, GoCodeHash, URLHash string
-	Segs                        [][]*Seg
-	PrevExample                 *Example
-	NextExample                 *Example
+	ID, Name    string
+	RealName    string // 渲染首页列表时需要的"中文"名称
+	Html        string // 内容等于 Segs 中 DocsRendered 字段的集合；否则在渲染模版时就会出现"分段"并产生重复的 HTML 元素。
+	GoCode      string
+	GoCodeHash  string
+	URLHash     string
+	Segs        [][]*Seg
+	PrevExample *Example
+	NextExample *Example
 }
 
 func parseSegs(sourcePath string) ([]*Seg, string) {
@@ -198,13 +201,14 @@ func parseExamples() []*Example {
 		exampleID = dashPat.ReplaceAllString(exampleID, "-")
 		example.ID = exampleID
 		example.Segs = make([][]*Seg, 0)
-		sourcePaths := mustGlob("examples/" + exampleID + "/*")
+		sourcePaths := mustGlob("examples/" + exampleID + "/*.md")
 		for _, sourcePath := range sourcePaths {
 			sourceSegs, fileContents := parseAndRenderSegs(sourcePath)
 			if fileContents != "" {
 				example.GoCode = fileContents
 			}
 			example.Segs = append(example.Segs, sourceSegs)
+			example.Html = markdown(fileContents)
 		}
 
 		examples = append(examples, &example)
